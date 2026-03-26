@@ -1,0 +1,45 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+
+# 1. Data Preparation
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
+train_data = datasets.MNIST(root='data', train=True, download=True, transform=transform)
+train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
+
+# 2. Define a Simple Model
+class DigitClassifier(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.flatten = nn.Flatten()
+        self.fc = nn.Sequential(
+            nn.Linear(28*28, 128),
+            nn.ReLU(),
+            nn.Linear(128, 10) # 10 digits (0-9)
+        )
+
+    def forward(self, x):
+        x = self.flatten(x)
+        return self.fc(x)
+
+model = DigitClassifier()
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+# 3. Quick Training Loop (1 Epoch for speed)
+print("Training MNIST Classifier...")
+for epoch in range(1):
+    for images, labels in train_loader:
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+print("Training complete.")
+# Quick test
+test_img, test_label = train_data[0]
+prediction = model(test_img).argmax(1).item()
+print(f"Predicted: {prediction}, Actual: {test_label}")
